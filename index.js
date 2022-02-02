@@ -1,8 +1,4 @@
-	//🎮 Codemonkey: codemonkey.com
-	//🎮 Codecombat: codecombat.com
-	//🎮Codingame: codingame.com 
-	
-	
+
 	
 	const currencyOneD= document.querySelector('[data-js="currency-one"]')
 	const currencyTwoD = document.querySelector('[data-js="currency-two"]')
@@ -31,7 +27,6 @@
 
 	// Se usa convenciones para almacenar los elemtos seleecionados del DOM
 	// Uso de innerHTML para manipular los datos de DOM
-	// console.log('Cambia el approach
 
 
 
