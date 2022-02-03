@@ -8,62 +8,9 @@
 	const currencyTimesD = document.querySelector('[data-js="currency-one-times"]')
 
 
-	let internalExchangeRate = {}
-
-// tmDV9V4bA8TaFFM
-
-
-// Your API Key: b8be350b9653c107d997c6ef
-// Example Request: https://v6.exchangerate-api.com/v6/b8be350b9653c107d997c6ef/latest/USD
-	const getUrl = currency => `https://v6.exchangerate-api.com/v6/b8be350b9653c107d997c6ef/latest/${currency}`
-	const getErrormessage = errorType => ({
-		'unsupported-code':'La moneda no existe en nuestra base de datos',
-		'malformed:request':'La escructura de solicitud de informacion no es la correcta',
-		'invalid-key':'Tu clave para obtener inforamcion es invalida',
-		'quota-reached':'Haz alcanzado tu numero maxio de solicitudes permitidas'
-	})[errorType] || 'No fue posible obtener esa informacion.'
-
-	//Esta funcion crea un objeto y recibe un parametro obj[]
-
-	// Se usa convenciones para almacenar los elemtos seleecionados del DOM
-	// Uso de innerHTML para manipular los datos de DOM
-
-
-
-	/*ERROR 
-	{ 	result: "error",
-		documentation: "https://www.exchangerate-api.com/docs", 
-		"terms-of-use": "https://www.exchangerate-api.com/terms",
-		"error-type": "unsupported-code" 
-	}*/
-
-	const fetchExchangeRate = async url => {
-
-	try {
-		const response = await fetch(url)
-		
-		//console.log(response.ok)
-				
-		if(!response.ok){
-			throw new Error('Su conexion fallo. No fue posible otbener esa informacion.')
-			
-		}
-		//console.log(response)
-		//console.log(response.ok)
-				
-		const exchangeRateData = await  response.json() 
-		
-		//console.log(exchangeRateData)
-		
-		if (exchangeRateData.result === 'error') {
-			throw new Error(getErrormessage(exchangeRateData['error-type']))
-		}		
-		return exchangeRateData
-	}
-
-	catch (err) {
-		//alert(err.message)
-		
+	//let internalExchangeRate = {}
+	
+		const showAlert = err => {
 		const div = document.createElement('div')
 		const button = document.createElement('button')
 		
@@ -79,65 +26,158 @@
 		
 		currenciesD.insertAdjacentElement('afterend', div)		
 		
-		button.addEventListener('click',() => {
+		const removeAlert = () => div.remove()		
+		button.addEventListener('click', removeAlert)
 		
-			div.remove()
-		})		
+		
+	}	 
+	
+	const state = (() => {
+		
+		let exchangeRate = {}
+		
+		return {
+			
+			getExchangeRate: () => exchangeRate,
+			setExchangeRate: newExchangeRate => {
+				
+				if(!newExchangeRate.conversion_rates) {
+					
+					showAlert({message:'El objeto necesita de una propiedad conversion_rates'})
+					return
+				}				
+				exchangeRate = newExchangeRate			
+				return exchangeRate
+			}			
+			
+		}
+	})()
+	
+
+
+//state.setExchangeRate({conversion_rates:{'CLP': 817.43}}) 
+// tmDV9V4bA8TaFFM
+
+
+// Your API Key: b8be350b9653c107d997c6ef
+// Example Request: https://v6.exchangerate-api.com/v6/b8be350b9653c107d997c6ef/latest/USD
+	
+	const APIkey = 'b8be350b9653c107d997c6ef'
+	const getUrl = currency =>
+		`https://v6.exchangerate-api.com/v6/${APIkey}/latest/${currency}`
+	const getErrormessage = errorType => ({
+		'unsupported-code':'La moneda no existe en nuestra base de datos',
+		'malformed:request':'La escructura de solicitud de informacion no es la correcta',
+		'invalid-key':'Tu clave para obtener inforamcion es invalida',
+		'quota-reached':'Haz alcanzado tu numero maxio de solicitudes permitidas'
+	})[errorType] || 'No fue posible obtener esa informacion.'
+	
+	
+	const fetchExchangeRate = async url => {
+
+
+	try {
+		const response = await fetch(url)
+		
+		
+		
+		/*if(!response.ok){
+			throw new Error('Su conexion fallo. No fue posible obtener esa informacion.')
+		}  */
+			
+		const exchangeRateData = await  response.json() 
+		
+		//error-type: "unsupported-code" ******
+				
+		 if (exchangeRateData.result === 'error') {
+			const errorMessage = getErrormessage(exchangeRateData['error-type'])			
+			throw new Error(errorMessage)
+			
+		}	
+		return state.setExchangeRate(exchangeRateData)
+	}
+
+	catch (err) {
+			showAlert(err)
 		}
 	}
+		
+	const getOptions = (selectedCurrency, conversion_rates) => {
+		
+	const selectAttribute = currency => 
+		currency === selectedCurrency ? 'selected' : ''	
+	
+	const getOptionsArray = currency => `<option ${selectAttribute(currency)}>${currency}</option>`
+	
+	return Object.keys(conversion_rates)
+						.map(getOptionsArray)
+						.join('')
+			
+	}
+	
+	const getMultipliedExchangeRate = conversion_rates => {
+		const currencyTwo = conversion_rates[currencyTwoD.value]
+		return(currencyTimesD.value * currencyTwo).toFixed(2)
+	}
+	
+	const getNotRoundedExchangeRate = conversion_rates => {
+		const currencyTwo = conversion_rates[currencyTwoD.value]
+		return`1 ${currencyOneD.value} = ${1 * currencyTwo} ${currencyTwoD.value}`
+	}
+		
+	const showUpdateRates = ({conversion_rates}) => {
+				
+		convertedValueD.textContent = getMultipliedExchangeRate(conversion_rates)
+		precisionValueD.textContent = getNotRoundedExchangeRate(conversion_rates)
+			
+	}
+	
+	const showInitialInfo = ({conversion_rates})=> {
+		
+		currencyOneD.innerHTML = getOptions('USD', conversion_rates)
+		currencyTwoD.innerHTML = getOptions('PEN', conversion_rates)		
+	
 
+		showUpdateRates({conversion_rates})
+	}
 	const init = async () => {
 
-	//const exchangeRateData = await fetchExchangeRate(getUrl('USD'))
 	
-	internalExchangeRate = {...(await fetchExchangeRate(getUrl('USD')))}
-	
-	//console.log(internalExchangeRate)
+	const url = getUrl('USD')	
+	const exchangeRate = await fetchExchangeRate(url)
 		
-				
-	const getOptions = selectedCurrency => Object.keys(internalExchangeRate.conversion_rates)
-						.map(currency => `<option ${currency === selectedCurrency ? 'selected' : ''}>${currency}</option>`).join('')
-					
-	//console.log(options)
-
-	currencyOneD.innerHTML = getOptions('USD')
-	currencyTwoD.innerHTML = getOptions('PEN')
-	
-	//console.log(currencyTwoD.value)
-	
-	convertedValueD.textContent = internalExchangeRate.conversion_rates.PEN.toFixed(2)
-	precisionValueD.textContent = `1 USD = ${internalExchangeRate.conversion_rates.PEN.toFixed(2)} PEN`
-		
+		if (exchangeRate && exchangeRate.conversion_rates) {
+			
+			showInitialInfo(exchangeRate)		
+		}	
 	}
-
-	currencyTimesD.addEventListener('input',(e) => {
-
-	convertedValueD.textContent = (e.target.value * internalExchangeRate.conversion_rates[currencyTwoD.value]).toFixed(2)
-	
-	})
-	
-	currencyTwoD.addEventListener('input', (e) => {
 		
-		const currencyTwoValue = internalExchangeRate.conversion_rates[e.target.value]
+	handleTimesCurrencyTimesDInput = () => {
 		
-		convertedValueD.textContent = (currencyTimesD.value * currencyTwoValue).toFixed(2)
-		precisionValueD.textContent =`1 ${currencyOneD.value} = ${1 * (internalExchangeRate.conversion_rates[currencyTwoD.value]).toFixed(2)} ${currencyTwoD.value}` 
+		const {conversion_rates} = state.getExchangeRate()
+		convertedValueD.textContent = getMultipliedExchangeRate(conversion_rates)
+	}
 	
-	})
+	handleCurrencyTwoDInput = () => {
+		const exchangeRate = state.getExchangeRate()
+
+		showUpdateRates(exchangeRate)
+	}	
 	
-	currencyOneD.addEventListener('input', async e => {
-		internalExchangeRate = {...(await fetchExchangeRate(getUrl(e.target.value)))}
+	handleTimesCurrencyTwo = async (e) => {
+		const url = getUrl(e.target.value)
+		const exchangeRate = await fetchExchangeRate(url)
+		
+		showUpdateRates(exchangeRate)
+	}
 	
-		convertedValueD.textContent = (currencyTimesD.value * internalExchangeRate.conversion_rates[currencyTwoD.value]).toFixed(2)
-		precisionValueD.textContent = `1 ${currencyOneD.value} = ${1 * internalExchangeRate.conversion_rates[currencyTwoD.value]} ${currencyTwoD.value}`
-		//console.log(internalExchangeRate)
-	})
+	currencyTimesD.addEventListener('input',handleTimesCurrencyTimesDInput)
+	currencyTwoD.addEventListener('input', handleCurrencyTwoDInput)
+	currencyOneD.addEventListener('input', handleTimesCurrencyTwo )
 		
 
 	init()
 	
-	
 
 
-	//console.log(currencyOneD, currencyTwoD)
 
